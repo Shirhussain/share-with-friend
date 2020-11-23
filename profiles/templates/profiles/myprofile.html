@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+    Profile
+{% endblock title %}
+
+
+{% block content %}
+    <h2>Profile: {{profile.first_name}} </h2>
+    <hr>
+    <img src="{{profile.avatar.url}}" alt="avatar">
+    <br>
+    {{profile.avatar.url}}
+    {{profile.first_name}}
+    <br>
+    {{profile.last_name}}
+    <br>
+    {{profile.bio}}
+    <br>
+    {{profile.country}}
+    <br>
+    {{profile.get_friend_no}}
+    <br>
+    <ul>
+        {% for friend in profile.get_friends %}
+            <li>{{friend}}</li>
+        {% endfor %}
+    </ul>
+
+{% endblock content %}
+

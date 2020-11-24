@@ -150,6 +150,10 @@ dmypy.json
 # profiling data
 .prof
 
+# static files
+static_cdn/media_root/*
+static_cdn/static_root/*
+
 ### vscode ###
 .vscode/*
 .vscode

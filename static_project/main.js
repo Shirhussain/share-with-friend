@@ -1,3 +1,8 @@
 $(document).ready(function(){
-    console.log("This is working from base")
+    $('#modal-btn').click(function(){
+        $('.ui.modal')
+        .modal('show')
+        ;
+    })
 })
+

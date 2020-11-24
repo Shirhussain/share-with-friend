@@ -23,6 +23,29 @@ class Profile(models.Model):
 
     def get_friend_no(self):
         return self.friends.all().count()
+
+    def get_posts_no(self):
+        # because here we set related_name 'posts' in author. otherwise we
+        # need to do like ---> self.post_set.all().count()
+        return self.posts.all().count()
+
+    def get_all_authors_posts(self):
+        return self.posts.all()
+
+    def get_likes_given_no(self):
+        likes = self.like_set.all()
+        total_liked = 0 
+        for like in likes:
+            if like.value=='LIKE':
+                total_liked += 1 
+        return total_liked
+
+    def get_likes_received_no(self):
+        posts = self.posts.all()
+        total_liked = 0
+        for post in posts:
+            total_liked += post.liked.all().count()
+        return total_liked
         
     def __str__(self):
         return f"{self.user.username}-{self.created.strftime('%d-%m-%Y')}"

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Posts
+{% endblock title %}
+
+
+{% block content %}
+    <div class="ui grid">
+        <div class="row">
+            <div class="eleven wide column">
+                {% for post in posts %}
+                    <div class="ui fluid card">
+                        <div class="content">
+                            {{post.content}}
+                        </div>
+                        <div class="content">
+                            <form action="{% url 'posts:reaction' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name='post_id' value="{{post.id}}">
+                                <button type="submit" class="ui primary button">
+                                    
+                                    {% if profile not in post.liked.all %}
+                                        <i class="thumbs up icon"></i>&nbsp;Like 
+                                    {% else %}
+                                        <i class="thumbs down icon"></i>&nbsp;Unlike
+                                    {% endif %}
+                                </button>
+                                &nbsp;{{post.num_likes}}
+                            </form>
+                        </div>
+                        <div>
+                            
+                            {% if post.comment_set.all %}
+                                
+                                {% for c in post.comment_set.all %}
+                                    <p>{{c.content}}</p>
+                                {% endfor %}
+                                    
+                            {% endif %}
+                                
+                        </div>
+                        <form action="" method="POST" class="ui form">
+                            {% csrf_token %}
+                            <input type="hidden" name="post_id" value={{post.id}}>
+                            {{c_form}}
+                            <button type="submit" name="submit_c_form" class="ui button primary">Comment</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="five wide column">
+                
+                {% if post_added %}
+                    <div class="ui green message">your post has been publish successfully</div>
+                {% endif %}
+                    
+                <form class="ui form" action="" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{p_form}}
+                    <button class="ui button positive" name="submit_p_form" type="submit">Publish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+        
+{% endblock content %}
+    

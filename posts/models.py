@@ -35,6 +35,8 @@ class Comment(models.Model):
     def __str__(self):
         return str(self.pk)
 
+    class Meta:
+        ordering = ('-created',)
 
 LIKE_CHOICES = (
     ('LIKE','Like'),

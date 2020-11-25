@@ -1,4 +1,7 @@
 from django.shortcuts import render, redirect
+from django.views.generic import UpdateView, DeleteView
+from django.urls import  reverse_lazy
+from django.contrib import messages
 
 from .models import Post, Comment, Like
 from profiles.models import Profile
@@ -74,4 +77,37 @@ def like_unlike_post(request):
             post.save()
             like.save()
     return redirect('posts:post_comment_list')
+
+
+class PostDeleteView(DeleteView):
+    model = Post
+    template_name = 'posts/confirm_delete.html'
+    # we use 'reverse' for function base view and 'reverse_lazy' for class base view
+    success_url = reverse_lazy('posts:post_comment_list')
+
+    def get_object(self, *args, **kwargs):
+        # for deleting specific post we need the 'pk'
+        pk = self.kwargs.get('pk')
+        post = Post.objects.get(pk=pk)
+        if not post.author.user == self.request.user:
+            messages.warning(self.request, "You need to be an author or the post in order to delete a post")
+        return post 
+    
+
+class PostUpdateView(UpdateView):
+    form_class = PostForm
+    model = Post
+    template_name = 'posts/update.html'
+    success_url = reverse_lazy('posts:post_comment_list')
+
+    # the above lines of code is working but for making sure that our user is owner or authenticated user 
+    # then then we should update.
+    def form_valid(self, form):
+        profile = Profile.objects.get(user=self.request.user)
+        if form.instance.author == profile:
+            return super().form_valid(form)
+        else:
+            form.add_error(None, "you need to be an author of the post in order to updated it")
+            return super().form_invalid(form)
+
 

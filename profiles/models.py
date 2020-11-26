@@ -1,9 +1,40 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import  slugify
+from django.db.models import Q
 
 from .utils import get_random_code
 
+
+class ProfileManager(models.Manager):
+    # here i use 'sender'---> and sender is actually 'me' or requested user
+    def get_all_profiles_to_invite(self, sender):
+        profiles = Profile.objects.all().exclude(user=sender)
+        profile = Profile.objects.get(user=sender)
+        relationships = Relationship.objects.filter(Q(sender=profile) | Q(receiver=profile))
+        print('relationships are here: ', relationships)
+
+        # the difference between 'accepted = [] and accepted = set([])' is that if you are going to 
+        # add just [] --> you need to use 'append' but for 'set([])' you need to use 'add' instead
+        # and because here it's show us duplicate user--> so we have to elemintate that a profile 
+        # should exists one time either 'sender' or 'receiver'---> that's why i used 'set([])' here
+        accepted = set([])
+        for rel in relationships:
+            if rel.status == 'accepted':
+                # we wanna added those who are accepted to prevent showing in our invite list anymore
+                accepted.add(rel.receiver)
+                accepted.add(rel.sender)
+        print("accepted here: ", accepted)
+        
+
+        # if not in our accepted list so we should listed on available
+        available = [profile for profile in profiles if profile not in accepted]
+        print("available profiles are here: ", available)
+        return available
+        
+    def get_all_profiles(self, me):
+        profiles = Profile.objects.all().exclude(user=me)
+        return profiles
 
 class Profile(models.Model):
     first_name = models.CharField(max_length=50, blank=True)
@@ -17,6 +48,8 @@ class Profile(models.Model):
     created    = models.DateTimeField(auto_now_add=True)
     updated    = models.DateTimeField(auto_now=True)
     slug       = models.SlugField(unique=True, blank=True)
+
+    objects = ProfileManager()
 
     def get_friends(self):
         return self.friends.all()
@@ -36,7 +69,7 @@ class Profile(models.Model):
         likes = self.like_set.all()
         total_liked = 0 
         for like in likes:
-            if like.value=='LIKE':
+            if like.value=='Like':
                 total_liked += 1 
         return total_liked
 
@@ -70,12 +103,21 @@ STATUS_CHOICES = (
     ('accepted', 'accepted')
 )
 
+
+class RelationshipManager(models.Manager):
+    # instead of doing Relationship.objects.received(myprofile)--> i gonna use manager like follows:
+    def invitation_received(self, receiver):
+        qs = Relationship.objects.filter(receiver=receiver, status='send')
+        return qs 
+
 class Relationship(models.Model):
     sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sender')
     receiver = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='receiver')
     status = models.CharField(max_length=8, choices=STATUS_CHOICES)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    objects = RelationshipManager()
     
     def __str__(self):
         return f'{self.sender}-{self.receiver}-{self.status}'

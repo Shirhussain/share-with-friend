@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -27,11 +27,45 @@ def my_profile_view(request):
 def invitation_received_view(request):
     profile = Profile.objects.get(user=request.user)
     qs = Relationship.objects.invitation_received(profile)
-    print("your initation list is",qs)
+    # if you wanna know more about lambda have look to this blog
+    # https://blog.pyplane.com/blog/map-filter-conditional-list-comprehension/
+    # by default in our invitation queryset we have bot sender and receiver but we just need sender 
+    results = list(map(lambda x: x.sender, qs))
+    is_empty = False
+    if len(results)== 0:
+        is_empty == True
+
     context = {
-        'qs': qs
+        'qs': results, 
+        'is_empty': is_empty
     }
     return render(request, 'profiles/my_invitation.html', context)
+
+
+def accept_invitation(request):
+    if request.method == 'POST':
+        pk = request.POST.get('profile_pk')
+        sender = Profile.objects.get(pk=pk)
+        receiver = Profile.objects.get(user=request.user)
+
+        rel = get_object_or_404(Relationship, sender=sender, receiver=receiver)
+
+        if rel.status == 'send':
+            rel.status = 'accepted'
+            rel.save()
+    return redirect('profiles:my-invitation')
+
+
+def reject_invitation(request):
+    if request.method == 'POST':
+        pk = request.POST.get('profile_pk')
+        sender = Profile.objects.get(pk=pk)
+        receiver = Profile.objects.get(user=request.user)
+
+        rel = get_object_or_404(Relationship, sender=sender, receiver=receiver)
+        rel.delete()
+    return redirect('profiles:my-invitation')    
+
 
 
 def invite_profiles_list_view(request):
@@ -117,8 +151,8 @@ def remove_from_friend(request):
         # it's somehow complected cuz we don't know who is the sender and who is the receiver 
         # it means that i don't know if i invited a particular user or vise versa 
         # here is the deal that you have to remove yourself from your friend list and vis versa 
-        rel = Relationship.objects.get(
-            (Q(sender=sender) & Q(receiver=receiver)) | (Q(sender=receiver) & (Q(receiver=sender)))
+        rel = Relationship.objects.filter(
+            (Q(sender=sender) & Q(receiver=receiver)) | (Q(sender=receiver) & Q(receiver=sender))
         )
         rel.delete()
         return redirect(request.META.get('HTTP_REFERER'))

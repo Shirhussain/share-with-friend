@@ -1,4 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.views.generic import ListView
+from django.contrib.auth.models import User
+from django.db.models import Q
 
 from .models import Profile, Relationship
 from .forms import ProfileForm
@@ -31,15 +34,6 @@ def invitation_received_view(request):
     return render(request, 'profiles/my_invitation.html', context)
 
 
-def profile_list_view(request):
-    user = request.user 
-    qs = Profile.objects.get_all_profiles(user)
-
-    context = {
-        'qs': qs 
-    }
-    return render(request, 'profiles/profile_list.html', context)
-
 def invite_profiles_list_view(request):
     user = request.user
     qs = Profile.objects.get_all_profiles_to_invite(user)
@@ -48,3 +42,86 @@ def invite_profiles_list_view(request):
         'qs': qs 
     }
     return render(request, 'profiles/to_invite_profile_list.html', context)
+
+
+# def profile_list_view(request):
+#     user = request.user 
+#     qs = Profile.objects.get_all_profiles(user)
+
+#     context = {
+#         'qs': qs 
+#     }
+#     return render(request, 'profiles/profile_list.html', context)
+
+
+# i wanna refactore the above function
+class ProfileListView(ListView):
+    model = Profile
+    template_name = 'profiles/profile_list.html'
+    # context_object_name = 'qs'
+
+    def get_queryset(self):
+        qs = Profile.objects.get_all_profiles(self.request.user)
+        return qs 
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # for making sure that we are geting the requested user do the following lines of code 
+        # cuz sometime i use just request.user and got errors
+        user = User.objects.get(username__iexact=self.request.user)
+        profile = Profile.objects.get(user=user)
+        # relationship_receiver
+        # and here when we are the sender of invite
+        rel_r = Relationship.objects.filter(sender=profile)
+        # rel_sender
+        # we are the receiver of the invite
+        rel_s = Relationship.objects.filter(receiver=profile)
+        rel_receiver = []
+        rel_sender = []
+        for item in rel_r:
+            rel_receiver.append(item.receiver.user)
+        
+        for item in rel_s:
+            rel_sender.append(item.sender.user)
+        # we can check that if the link of our queryset is = '0' then we gonna create another 
+        # context dictionary like 'is_empty' and return it to True because by default it set to False
+        context["rel_sender"] = rel_sender
+        context["rel_receiver"] = rel_receiver
+        context["is_empty"] = False 
+        if len(self.get_queryset())==0:
+            context["is_empty"] = True
+        return context
+
+
+def send_invitation(request):
+    if request.method == 'POST':
+        pk = request.POST.get('profile_pk')
+        user = request.user 
+        sender = Profile.objects.get(user=user)
+        receiver = Profile.objects.get(pk=pk)
+
+        rel = Relationship.objects.create(sender=sender, receiver=receiver, status='send')
+        # I wanna redirect to the same path so here is the way
+        return redirect(request.META.get('HTTP_REFERER'))
+    
+    return redirect('profiles:myprofile')
+
+
+def remove_from_friend(request):
+    if request.method == 'POST':
+        pk = request.POST.get('profile_pk')
+        user = request.user 
+        sender = Profile.objects.get(user=user)
+        receiver = Profile.objects.get(pk=pk)
+
+        # it's somehow complected cuz we don't know who is the sender and who is the receiver 
+        # it means that i don't know if i invited a particular user or vise versa 
+        # here is the deal that you have to remove yourself from your friend list and vis versa 
+        rel = Relationship.objects.get(
+            (Q(sender=sender) & Q(receiver=receiver)) | (Q(sender=receiver) & (Q(receiver=sender)))
+        )
+        rel.delete()
+        return redirect(request.META.get('HTTP_REFERER'))
+    
+    return redirect('profiles:myprofile')
+    

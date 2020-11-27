@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.models import User
 from django.db.models import Q
 
@@ -78,6 +78,35 @@ def invite_profiles_list_view(request):
     return render(request, 'profiles/to_invite_profile_list.html', context)
 
 
+class ProfileDetailView(DetailView):
+    model = Profile
+    template_name = 'profiles/detail.html'
+
+    def get_object(self):
+        slug = self.kwargs.get('slug')
+        profile = Profile.objects.get(slug=slug)
+        return profile
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = User.objects.get(username__iexact=self.request.user)
+        profile = Profile.objects.get(user=user)
+        rel_r = Relationship.objects.filter(sender=profile)
+        rel_s = Relationship.objects.filter(receiver=profile)
+        rel_receiver = []
+        rel_sender = []
+        for item in rel_r:
+            rel_receiver.append(item.receiver.user)
+        for item in rel_s:
+            rel_sender.append(item.sender.user)
+        context["rel_receiver"] = rel_receiver
+        context["rel_sender"] = rel_sender
+        context['posts'] = self.get_object().get_all_authors_posts()
+        context['len_posts'] = True if len(self.get_object().get_all_authors_posts()) > 0 else False
+        return context
+    
+
+
 # def profile_list_view(request):
 #     user = request.user 
 #     qs = Profile.objects.get_all_profiles(user)
@@ -88,7 +117,7 @@ def invite_profiles_list_view(request):
 #     return render(request, 'profiles/profile_list.html', context)
 
 
-# i wanna refactore the above function
+# i wanna refactore the above function in CBV
 class ProfileListView(ListView):
     model = Profile
     template_name = 'profiles/profile_list.html'
@@ -135,6 +164,7 @@ def send_invitation(request):
         receiver = Profile.objects.get(pk=pk)
 
         rel = Relationship.objects.create(sender=sender, receiver=receiver, status='send')
+        print("This is the relation: ", rel)
         # I wanna redirect to the same path so here is the way
         return redirect(request.META.get('HTTP_REFERER'))
     
@@ -151,7 +181,7 @@ def remove_from_friend(request):
         # it's somehow complected cuz we don't know who is the sender and who is the receiver 
         # it means that i don't know if i invited a particular user or vise versa 
         # here is the deal that you have to remove yourself from your friend list and vis versa 
-        rel = Relationship.objects.filter(
+        rel = Relationship.objects.get(
             (Q(sender=sender) & Q(receiver=receiver)) | (Q(sender=receiver) & Q(receiver=sender))
         )
         rel.delete()

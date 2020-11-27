@@ -1,4 +1,5 @@
 from django.db import models
+from django.shortcuts import reverse
 from django.contrib.auth.models import User
 from django.template.defaultfilters import  slugify
 from django.db.models import Q
@@ -49,6 +50,13 @@ class Profile(models.Model):
     updated    = models.DateTimeField(auto_now=True)
     slug       = models.SlugField(unique=True, blank=True)
 
+    def __str__(self):
+        return f"{self.user.username}-{self.created.strftime('%d-%m-%Y')}"
+    
+    def get_absolute_url(self):
+        return reverse("profiles:profile-detail", kwargs={"slug": self.slug})
+    
+
     objects = ProfileManager()
 
     def get_friends(self):
@@ -80,22 +88,50 @@ class Profile(models.Model):
             total_liked += post.liked.all().count()
         return total_liked
         
-    def __str__(self):
-        return f"{self.user.username}-{self.created.strftime('%d-%m-%Y')}"
-    
+
+    # there is a little problem with default config of __init__ method when we use 'uuid'
+    # when we save the object then it will automatically create a random number to the slug if needed
+    # the problem is that if you wanna run 'save and continue' then it will create another randome number
+    # to the end of slug so we should do the following style.
+
+    __initial_first_name = None
+    __initial_last_name = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__initial_first_name = self.first_name 
+        self.__initial_last_name = self.last_name
+        
     def save(self, *args, **kwargs):
         # check if it's exists
         ex = False
-        if self.first_name and self.last_name:
-            to_slug = slugify(str(self.first_name)+" "+str(self.last_name))
-            ex = Profile.objects.filter(slug=to_slug).exists()
-            while ex:
-                to_slug = slugify(to_slug+" "+str(get_random_code()))
-                ex = Profile.objects.filter(slug=to_slug)
-        else:
-            to_slug = str(self.user)
+        to_slug = self.slug
+        if self.first_name != self.__initial_first_name or self.last_name != self.__initial_last_name or self.slug=="":
+            if self.first_name and self.last_name:
+                to_slug = slugify(str(self.first_name)+" "+str(self.last_name))
+                ex = Profile.objects.filter(slug=to_slug).exists()
+                while ex:
+                    to_slug = slugify(to_slug+" "+str(get_random_code()))
+                    ex = Profile.objects.filter(slug=to_slug)
+            else:
+                to_slug = str(self.user)
         self.slug = to_slug
         super().save(*args, **kwargs)
+
+    # this code is from  the first veersion code or before the bug 
+    # def save(self, *args, **kwargs):
+    #     # check if it's exists
+    #     ex = False
+    #     if self.first_name and self.last_name:
+    #         to_slug = slugify(str(self.first_name)+" "+str(self.last_name))
+    #         ex = Profile.objects.filter(slug=to_slug).exists()
+    #         while ex:
+    #             to_slug = slugify(to_slug+" "+str(get_random_code()))
+    #             ex = Profile.objects.filter(slug=to_slug)
+    #     else:
+    #         to_slug = str(self.user)
+    #     self.slug = to_slug
+    #     super().save(*args, **kwargs)
 
 
 STATUS_CHOICES = (

@@ -24,7 +24,7 @@
                     <div class="thirteen wide column">
                         <h3>{{profile.user}}</h3>
                         <p>{{profile.bio}}</p>
-                        <button class="ui button primary mb-5 w-big">See profile</button>
+                        <a href={{profile.get_absolute_url}}><button class="ui button primary mb-5 w-big">See profile</button></a>
                         <br>
                     
                         {% if profile.user not in rel_receiver and profile.user not in rel_sender %}
@@ -50,7 +50,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name='profile_pk' value={{profile.pk}}>
                                 
-                                    <button class="ui negative basic button mb-5 w-big"><i class="minus square icon"></i>Remove from friends</button>
+                                <button type="submit" class="ui negative basic button mb-5 w-big"><i class="minus square icon"></i>Remove from friends</button>
                             </form>
                         {% endif %}
                     </div>

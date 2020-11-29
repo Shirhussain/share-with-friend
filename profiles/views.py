@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.models import User
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
+from django.http import Http404
 
 from .models import Profile, Relationship
 from .forms import ProfileForm
@@ -33,7 +35,7 @@ def invitation_received_view(request):
     results = list(map(lambda x: x.sender, qs))
     is_empty = False
     if len(results)== 0:
-        is_empty == True
+        is_empty = True
 
     context = {
         'qs': results, 
@@ -78,14 +80,15 @@ def invite_profiles_list_view(request):
     return render(request, 'profiles/to_invite_profile_list.html', context)
 
 
-class ProfileDetailView(DetailView):
+class ProfileDetailView(LoginRequiredMixin, DetailView):
     model = Profile
     template_name = 'profiles/detail.html'
 
-    def get_object(self):
-        slug = self.kwargs.get('slug')
-        profile = Profile.objects.get(slug=slug)
-        return profile
+    # def get_object(self):
+    #     slug = self.kwargs.get('slug')
+    #     profile = Profile.objects.get(slug=slug)
+    #     return profile
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -104,7 +107,6 @@ class ProfileDetailView(DetailView):
         context['posts'] = self.get_object().get_all_authors_posts()
         context['len_posts'] = True if len(self.get_object().get_all_authors_posts()) > 0 else False
         return context
-    
 
 
 # def profile_list_view(request):

@@ -112,7 +112,7 @@ class Profile(models.Model):
                 ex = Profile.objects.filter(slug=to_slug).exists()
                 while ex:
                     to_slug = slugify(to_slug+" "+str(get_random_code()))
-                    ex = Profile.objects.filter(slug=to_slug)
+                    ex = Profile.objects.filter(slug=to_slug).exists()
             else:
                 to_slug = str(self.user)
         self.slug = to_slug
@@ -127,7 +127,7 @@ class Profile(models.Model):
     #         ex = Profile.objects.filter(slug=to_slug).exists()
     #         while ex:
     #             to_slug = slugify(to_slug+" "+str(get_random_code()))
-    #             ex = Profile.objects.filter(slug=to_slug)
+    #             ex = Profile.objects.filter(slug=to_slug).exists()
     #     else:
     #         to_slug = str(self.user)
     #     self.slug = to_slug

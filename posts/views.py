@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import UpdateView, DeleteView
 from django.urls import  reverse_lazy
 from django.contrib import messages
+from django.http import JsonResponse
 
 from .models import Post, Comment, Like
 from profiles.models import Profile
@@ -76,6 +77,13 @@ def like_unlike_post(request):
 
             post.save()
             like.save()
+        
+        data = {
+            'value': like.value,
+            'likes': post.liked.all().count()
+        }
+        return JsonResponse(data, safe=False)
+
     return redirect('posts:post_comment_list')
 
 

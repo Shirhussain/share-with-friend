@@ -31,18 +31,24 @@
             <div class="content">
                 <p> {{ post.content }} </p>
                 <div class="right floated">
-                    <form action="{% url 'posts:reaction' %}" method="POST">
+                    <form action="{% url 'posts:reaction' %}" method="POST" class="like-form" id={{post.id}}>
                         {% csrf_token %}
                         <input type="hidden" name="post_id" value={{post.id}}>
-                        {% if profile not in post.liked.all %}
-                            <button type="submit" class="ui bwhite-sm button"><i class="thumbs up icon"></i>
-                            </button>
-                            <span> {{post.num_likes}} likes</span>
-                        {% else %}
-                            <button type="submit" class="ui bwhite-sm button"><i class="thumbs down icon"></i>
-                            </button>
-                            <span> {{post.num_likes}} likes</span>
-                        {% endif %}
+                        <button type="submit" class="ui button like-btn{{post.id}}">
+                            {% if profile not in post.liked.all %}
+                                Like
+                            {% else %}
+                                Unlike
+                            {% endif %}
+                        </button>
+                        <div class="ui grid">
+                            <div class="column">
+                                <div class="like-count{{post.id}}"> {{post.num_likes}}</div>
+                            </div>
+                            <div class="column">
+                                Like
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <i class="comment icon"></i>
@@ -106,6 +112,44 @@
                     display=false
                 }  
             });
+
+            $(".like-form").submit(function(e){
+                e.preventDefault()
+
+                const post_id = $(this).attr('id')
+
+                const like_text = $(`.like-btn${post_id}`).text()
+                // to element the withe spaces in console we have to use 'trim'
+                const trim = $.trim(like_text)
+                console.log(trim)
+
+                const url = $(this).attr('action')
+                
+                let res;
+                const likes = $(`.like-count${post_id}`).text()
+                // to change it to integer when we are going to count the likes 
+                const trimCount = parseInt(likes)
+
+                $.ajax({
+                    type: 'POST',
+                    url = url, 
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                        'post_id': post_id,
+                    },
+                    success: function(response){
+                        console.log('success', response)
+                        // if(trim=='Unlike'){
+                        //     $(`.like-btn${post_id}`).text('Like')
+                        // } else {
+                        //     $(`.like-btn${post_id}`).text('Unlike')
+                        // }
+                    },
+                    error: function(response){
+                        console.log('error', response)
+                    }
+                })
+            })
         });
     </script>
 {% endblock scripts %}

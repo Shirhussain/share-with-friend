@@ -7,6 +7,7 @@ from .views import  home
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
     path('', home, name='home'),
     path('profile/', include('profiles.urls', namespace='profiles')),
     path('posts/', include('posts.urls', namespace='posts'))

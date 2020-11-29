@@ -53,8 +53,8 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}-{self.created.strftime('%d-%m-%Y')}"
     
-    def get_absolute_url(self):
-        return reverse("profiles:profile-detail", kwargs={"slug": self.slug})
+    # def get_absolute_url(self):
+    #     return reverse("profiles:profile-detail", kwargs={"slug": self.slug})
     
 
     objects = ProfileManager()

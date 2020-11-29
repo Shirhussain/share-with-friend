@@ -3,12 +3,15 @@ from django.views.generic import UpdateView, DeleteView
 from django.urls import  reverse_lazy
 from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import Post, Comment, Like
 from profiles.models import Profile
 from .forms import PostForm, CommentForm
 
 
+@login_required
 def post_comment_create_list_view(request):
     posts = Post.objects.all()
     profile = Profile.objects.get(user=request.user)
@@ -51,7 +54,7 @@ def post_comment_create_list_view(request):
     
     return render(request, 'posts/main.html', context)
 
-
+@login_required
 def like_unlike_post(request):
     user = request.user
     if request.method == 'POST':
@@ -87,7 +90,7 @@ def like_unlike_post(request):
     return redirect('posts:post_comment_list')
 
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(LoginRequiredMixin, DeleteView):
     model = Post
     template_name = 'posts/confirm_delete.html'
     # we use 'reverse' for function base view and 'reverse_lazy' for class base view
@@ -102,7 +105,7 @@ class PostDeleteView(DeleteView):
         return post 
     
 
-class PostUpdateView(UpdateView):
+class PostUpdateView(LoginRequiredMixin, UpdateView):
     form_class = PostForm
     model = Post
     template_name = 'posts/update.html'

@@ -132,22 +132,25 @@
 
                 $.ajax({
                     type: 'POST',
-                    url = url, 
+                    url : url,
                     data: {
                         'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
                         'post_id': post_id,
                     },
                     success: function(response){
-                        console.log('success', response)
-                        // if(trim=='Unlike'){
-                        //     $(`.like-btn${post_id}`).text('Like')
-                        // } else {
-                        //     $(`.like-btn${post_id}`).text('Unlike')
-                        // }
+                        if(trim == 'Unlike'){
+                            $(`.like-btn${post_id}`).text('Like')
+                            res = trimCount - 1 
+                        } else {
+                            $(`.like-btn${post_id}`).text('Unlike')
+                            res = trimCount + 1
+                        }
+                        $(`.like-count${post_id}`).text(res)
                     },
                     error: function(response){
                         console.log('error', response)
                     }
+                    
                 })
             })
         });

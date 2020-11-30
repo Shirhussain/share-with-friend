@@ -53,11 +53,11 @@
                 <img src="{{picture.url}}" alt="avatar" class="ui avatar image"> &nbsp;
                 {{ request.user }}
               </a>
-              <a href="" class="ui item">
+              <a href="{% url 'account_logout' %}" class="ui item">
                   Logout
               </a>
           {% else %}
-          <a href="" class="ui item">
+          <a href="{% url 'account_login' %}" class="ui item">
                   Login
               </a>
           {% endif %}
